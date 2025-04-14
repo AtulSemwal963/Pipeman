@@ -1,0 +1,10 @@
+<clickhouse>
+    <users>
+        <default>
+            <!-- JWT token as password; we'll generate it below -->
+            <password_sha256_hex>60921986da37fd2178e4810cf0c5a5040c0faedfbf6434956b794f5c3b607b97</password_sha256_hex>
+            <access_management>1</access_management>
+            <auth_type>jwt</auth_type>
+        </default>
+    </users>
+</clickhouse>

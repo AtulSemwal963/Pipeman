@@ -1,0 +1,13 @@
+version: '3.8'
+services:
+  clickhouse:
+    image: clickhouse/clickhouse-server
+    container_name: clickhouse-server
+    ports:
+      - "8123:8123"
+      - "9000:9000"
+    volumes:
+      - ./allow_default.xml:/etc/clickhouse-server/users.d/allow_default.xml
+      - clickhouse_data:/var/lib/clickhouse
+volumes:
+  clickhouse_data:
