@@ -12,7 +12,6 @@ class ConnectionRequest(BaseModel):
     port: Optional[str] = "8123"
     database: Optional[str] = "default"
     user: Optional[str] = "default"
-    jwt_token: Optional[str] = ""  # For ClickHouse JWT auth
     filename: Optional[str] = None
     delimiter: Optional[str] = None
 
@@ -30,7 +29,5 @@ class ConnectionRequest(BaseModel):
 
 class IngestionRequest(ConnectionRequest):
     table: Optional[str] = None
-    tables: Optional[List[str]] = None  # For multi-table join
-    join_condition: Optional[str] = None  # For multi-table join
     columns: Optional[List[str]] = None
     output_file: Optional[str] = None

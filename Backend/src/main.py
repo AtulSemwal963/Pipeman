@@ -22,7 +22,7 @@ async def get_tables(request: ConnectionRequest):
         if request.source != "clickhouse":
             raise HTTPException(status_code=400, detail="Tables only supported for ClickHouse")
         tables = get_clickhouse_tables(
-            request.host, request.port, request.database, request.user, request.jwt_token
+            request.host, request.port, request.database, request.user
         )
         return {"source": "clickhouse", "tables": tables}
     except HTTPException as e:
@@ -37,7 +37,7 @@ async def get_columns(request: ConnectionRequest, table: Optional[str] = None):
             if not table:
                 raise HTTPException(status_code=400, detail="Table name required")
             columns = get_clickhouse_columns(
-                request.host, request.port, request.database, request.user, request.jwt_token, table
+                request.host, request.port, request.database, request.user, table
             )
             return {"source": "clickhouse", "table": table, "columns": columns}
         elif request.source == "flatfile":
@@ -56,19 +56,18 @@ async def get_columns(request: ConnectionRequest, table: Optional[str] = None):
 async def ingest_data(request: IngestionRequest):
     try:
         if request.source == "clickhouse":
-            if not request.tables or not request.output_file:
-                raise HTTPException(status_code=400, detail="Tables and output file required")
+            if not request.table or not request.output_file:
+                raise HTTPException(status_code=400, detail="Table and output file required")
             count = ingest_clickhouse_to_flatfile(
-                request.host, request.port, request.database, request.user, request.jwt_token,
-                request.tables, request.columns or [], request.output_file, request.delimiter or ",",
-                request.join_condition
+                request.host, request.port, request.database, request.user,
+                request.table, request.columns or [], request.output_file, request.delimiter or ","
             )
         elif request.source == "flatfile":
             if not request.filename or not request.table:
                 raise HTTPException(status_code=400, detail="Filename and table required")
             count = ingest_flatfile_to_clickhouse(
                 request.filename, request.delimiter, request.host, request.port,
-                request.database, request.user, request.jwt_token, request.table, request.columns
+                request.database, request.user, request.table, request.columns
             )
         else:
             raise HTTPException(status_code=400, detail="Invalid source")
@@ -82,11 +81,11 @@ async def ingest_data(request: IngestionRequest):
 async def preview_data(request: IngestionRequest):
     try:
         if request.source == "clickhouse":
-            if not request.tables:
-                raise HTTPException(status_code=400, detail="Tables required")
+            if not request.table:
+                raise HTTPException(status_code=400, detail="Table required")
             return preview_clickhouse_data(
-                request.host, request.port, request.database, request.user, request.jwt_token,
-                request.tables, request.columns or [], request.join_condition
+                request.host, request.port, request.database, request.user,
+                request.table, request.columns or []
             )
         elif request.source == "flatfile":
             if not request.filename:
