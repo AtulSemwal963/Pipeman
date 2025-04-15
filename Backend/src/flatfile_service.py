@@ -47,7 +47,7 @@ def get_flatfile_schema(filename: str, delimiter: str = None) -> List[str]:
 
 def ingest_flatfile_to_clickhouse(
     filename: str, delimiter: str, host: str, port: str, database: str,
-    user: str, jwt_token: str, table: str, columns: List[str]
+    user: str, table: str, columns: List[str]
 ) -> int:
     try:
         from .clickhouse_service import get_clickhouse_client
@@ -77,23 +77,29 @@ def ingest_flatfile_to_clickhouse(
         column_defs = ", ".join([f"`{col}` {col_type}" for col, col_type in zip(df.columns, column_types)])
         
         # Create table
-        client = get_clickhouse_client(host, port, database, user, jwt_token)
-        client.command(f"""
-            CREATE TABLE IF NOT EXISTS {table} ({column_defs})
-            ENGINE = MergeTree() ORDER BY tuple()
-        """)
+        client = get_clickhouse_client(host, port, database, user)
+        try:
+            client.command(f"""
+                CREATE TABLE IF NOT EXISTS {table} ({column_defs})
+                ENGINE = MergeTree() ORDER BY tuple()
+            """)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Failed to create table: {str(e)}")
         
         # Insert data in batches
         batch_size = 10000
         total_rows = 0
-        for start in range(0, len(df), batch_size):
-            batch = df.iloc[start:start + batch_size]
-            client.insert_df(table=table, df=batch)
-            total_rows += len(batch)
+        try:
+            for start in range(0, len(df), batch_size):
+                batch = df.iloc[start:start + batch_size]
+                client.insert_df(table=table, df=batch)
+                total_rows += len(batch)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Failed to insert data: {str(e)}")
         
         return total_rows
-    except clickhouse_connect.exceptions.DatabaseError as de:
-        raise HTTPException(status_code=500, detail=f"Ingestion failed: {str(de)}")
+    except HTTPException as e:
+        raise e
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Ingestion failed: {str(e)}")
 

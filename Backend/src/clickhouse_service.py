@@ -7,15 +7,20 @@ from typing import List, Optional
 
 def get_clickhouse_client(host: str, port: str, database: str, user: str):
     try:
-        return get_client(
+        client = get_client(
             host=host,
             port=int(port),
             database=database,
             user=user,
             secure=port in ["8443", "9440"]
         )
+        # Test the connection
+        client.ping()
+        return client
     except clickhouse_connect.exceptions.NetworkError as ne:
         raise HTTPException(status_code=500, detail=f"Connection failed: {str(ne)}")
+    except clickhouse_connect.exceptions.DatabaseError as de:
+        raise HTTPException(status_code=500, detail=f"Database error: {str(de)}")
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Client initialization failed: {str(e)}")
 
